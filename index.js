@@ -9,6 +9,8 @@
         SCRIPTS: 'scripts',
         TEMPLATE_FILES: 'templateFiles'
     };
+    var AGENT_TYPES = ['Android', 'Browser', 'iOS', 'iPad', 'iPhone', 'Mac', 'Mobile', 'webOS', 'Windows'];
+    var cache = {};
 
     function merge(masterAssetData, newAssetData) {
 
@@ -113,7 +115,7 @@
                 case constants.TRAILING_SCRIPTS:
                 case constants.STYLESHEETS:
                 case constants.SCRIPTS:
-//        case constants.TEMPLATE_FILES:
+//                case constants.TEMPLATE_FILES:
 //            console.log("prop: " + propName);
                     _filterByAgent(agent, propName, propValue, filtered);
                     break;
@@ -127,9 +129,50 @@
 
     }
 
+    function _getUserAgentHash(req) {
+        var agent = ua(req.headers['user-agent']);
+
+        var hash = '';
+        AGENT_TYPES.forEach(function(type) {
+            var newVal ='0';
+            if(agent[type]) {
+                newVal = '1';
+            }
+
+            hash = hash + newVal;
+        });
+
+        console.log(hash);
+
+        return hash;
+    }
+
+    function getModule(req, module) {
+
+        var userAgentHash = _getUserAgentHash(req);
+        if(cache[userAgentHash]) {
+            return cache[userAgentHash].module;
+        } else {
+            var mod = filter(req, module);
+            cache[userAgentHash] = {module: mod};
+            return mod;
+        }
+    }
+
+    function setModule(req, module) {
+        var userAgentHash = _getUserAgentHash(req);
+        if(cache[userAgentHash]) {
+            cache[userAgentHash].module = module;
+        } else {
+            cache[userAgentHash] = {module: module};
+        }
+    }
+
     module.exports = {
         merge: merge,
-        filter: filter
+        filter: filter,
+        getModule: getModule,
+        setModule: setModule
     };
 
 })(module);
