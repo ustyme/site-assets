@@ -24,24 +24,7 @@
 
             if (Array.isArray(newAssetDataValue)) {
                 if (masterAssetData[propName]) {
-
-//            console.log("masterAssetData[propName]:" + masterAssetData[propName]);
-                    switch (propName) {
-                        case constants.TRAILING_SCRIPTS:
-                        case constants.STYLESHEETS:
-                        case constants.SCRIPTS:
-//            case constants.TEMPLATE_FILES:
-                            var isNotArray = !Array.isArray(masterAssetData[propName]);
-                            if (isNotArray) {
-                                masterAssetData[propName].all = masterAssetData[propName].all.concat(newAssetDataValue);
-                            } else {
-                                masterAssetData[propName] = masterAssetData[propName].concat(newAssetDataValue);
-                            }
-                            break;
-                        default:
-                            masterAssetData[propName] = masterAssetData[propName].concat(newAssetDataValue);
-                            break;
-                    }
+                    masterAssetData[propName] = masterAssetData[propName].concat(newAssetDataValue);
                 } else {
                     masterAssetData[propName] = newAssetDataValue;
                 }
@@ -83,20 +66,30 @@
     function _filterByAgent(agent, propName, assets, filtered) {
         agent.all = true;
         var agentKeys = Object.keys(agent);
-        var i = agentKeys.length;
+//        var i = agentKeys.length;
         var agentType;
 
-        while (i--) {
-            agentType = agentKeys[i];
-            if (agent[agentType] && assets[agentType.toLowerCase()]) {
-                var lowerAgentType = agentType.toLowerCase();
-                if (filtered[propName]) {
-                    filtered[propName] = filtered[propName].concat(assets[lowerAgentType]);
+        assets.forEach(function(asset) {
+            if (typeof asset === 'string') {
+                if(filtered[propName]) {
+                    filtered[propName].push(asset);
                 } else {
-                    filtered[propName] = assets[lowerAgentType];
+                    filtered[propName] = [asset];
+                }
+            } else if (asset.agents) {
+                var i = agentKeys.length;
+                while (i--) {
+                    agentType = agentKeys[i];
+                    if(asset.agents.indexOf(agentType)>0) {
+                        if(filtered[propName]) {
+                            filtered[propName].push(asset.name);
+                        } else {
+                            filtered[propName] = [asset];
+                        }
+                    }
                 }
             }
-        }
+        });
     }
 
     function filter(req, defaults) {
