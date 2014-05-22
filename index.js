@@ -80,7 +80,7 @@
                 var i = agentKeys.length;
                 while (i--) {
                     agentType = agentKeys[i];
-                    if(asset.agents.indexOf(agentType)>0) {
+                    if(asset.agents.indexOf(agentType.toLowerCase())>=0 || asset.agents.indexOf(agentType)>=0) {
                         if(filtered[propName]) {
                             filtered[propName].push(asset.name);
                         } else {
@@ -159,6 +159,10 @@
         } else {
             cache[userAgentHash] = {module: module};
         }
+    }
+
+    function compileSite () {
+
     }
 
     module.exports = {
