@@ -19,7 +19,9 @@
     "devDependencies": {
     },
     "dependencies": {
-        "mobile-agent": "*"
+        "mobile-agent": "*",
+        "handlebars": "*",
+        "async": "0.2.9"
     },
     "bugs": {
         "url": "http://github.com/ustyme/config-merge/issues"

@@ -10,7 +10,18 @@
         TEMPLATE_FILES: 'templateFiles'
     };
     var AGENT_TYPES = ['Android', 'Browser', 'iOS', 'iPad', 'iPhone', 'Mac', 'Mobile', 'webOS', 'Windows'];
-    var cache = {};
+    var cache = {
+        templates: {},
+        files: {}
+    };
+
+    var HTTP_NOT_FOUND = 404,
+        path = require("path"),
+        hbars = require("handlebars"),
+        util = require("./lib/util"),
+        locate = util.locate,
+        fs = require("fs"),
+        async = require('async');
 
     function merge(masterAssetData, newAssetData) {
 
@@ -140,16 +151,30 @@
         return hash;
     }
 
-    function getModule(req, module) {
+    function getModule(req, module, namespace) {
 
         var userAgentHash = _getUserAgentHash(req);
-        if(cache[userAgentHash]) {
-            return cache[userAgentHash].module;
+        if(namespace) {
+            if(cache[namespace] && cache[namespace][userAgentHash]) {
+                return cache[namespace][userAgentHash].module;
+            } else if (!module) {
+                return undefined;
+            } else {
+                var mod = filter(req, module);
+                cache[namespace] = {};
+                cache[namespace][userAgentHash] = {module: mod};
+                return mod;
+            }
         } else {
-            var mod = filter(req, module);
-            cache[userAgentHash] = {module: mod};
-            return mod;
+            if(cache[userAgentHash]) {
+                return cache[userAgentHash].module;
+            } else {
+                var mod = filter(req, module);
+                cache[userAgentHash] = {module: mod};
+                return mod;
+            }
         }
+
     }
 
     function setModule(req, module) {
@@ -161,15 +186,126 @@
         }
     }
 
-    function compileSite () {
+    function load(cache, file, cb, debug) {
+        if (Object.prototype.toString.call(file) === '[object Function]') {
+            return file(cb);
+        }
 
+        var cached = cache.files[file];
+
+        if (cached) {
+            return cb(undefined, cached);
+        }
+
+        debug("reading", file);
+
+        fs.readFile(file, "utf-8", function (err, content) {
+            if (err) {
+                return cb(err);
+            }
+
+            cache.files[file] = content;
+
+            return cb(undefined, content);
+        });
+    }
+
+    function compileHtml(mod, file, statusCode, debug, cb) {
+        var cached = cache.templates[file];
+
+        if (cached) {
+            return cb(undefined, mod, cached, statusCode);
+        }
+
+        return locate(mod["public"], file, function (err, qfile) {
+            if (err) {
+                if (statusCode === HTTP_NOT_FOUND) {
+                    return cb(err);
+                }
+
+                return compileHtml(mod, "/404.html", cb, HTTP_NOT_FOUND, debug);
+            }
+            return load(cache, qfile, function (err, content) {
+                if (err) {
+                    return cb(err);
+                }
+
+                var template = hbars.compile(content);
+
+                cache.templates[file] = template;
+
+                return cb(undefined, mod, template, statusCode);
+            }, debug);
+        });
+    }
+
+    function compileSite(mod, debug, cb) {
+        var htmlFiles = mod.htmlFiles,
+            rawHtml = [],
+            idx = 0,
+            templateFiles = mod.templateFiles,
+            templateHtml = [],
+            file;
+
+        function loadHtmlFiles(cb) {
+            console.log('******** file: ' + file);
+            var pos = idx++;
+            async.each(htmlFiles, function (file, callback) {
+                load(cache, file, function (err, content) {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    rawHtml[pos] = content;
+                    return callback();
+                }, debug);
+            }, cb);
+        }
+
+        function loadTemplateFiles(cb) {
+            async.each(templateFiles, function (file, callback) {
+                console.log('$$ file: ' + file);
+                var name = path.basename(file, '.html');
+
+                load(cache, file, function (err, content) {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    templateHtml.push({
+                        name: name,
+                        content: content
+                    });
+                    return callback();
+                }, debug);
+            }, cb);
+        }
+
+        if(!mod.compileSite) {
+            async.parallel([
+                loadHtmlFiles,
+                loadTemplateFiles
+            ], function (err) {
+                if (err) {
+                    debug.error(err);
+                }
+                mod.htmlFiles = rawHtml;
+                mod.templateFiles = templateHtml;
+                mod.compileSite = true;
+                cb();
+            });
+        } else {
+            cb();
+        }
     }
 
     module.exports = {
         merge: merge,
         filter: filter,
         getModule: getModule,
-        setModule: setModule
+        setModule: setModule,
+        compileSite: compileSite,
+        compileHtml: compileHtml
     };
 
 })(module);
