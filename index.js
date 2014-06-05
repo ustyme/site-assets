@@ -146,7 +146,7 @@
             hash = hash + newVal;
         });
 
-        console.log(hash);
+//        console.log(hash);
 
         return hash;
     }
