@@ -74,9 +74,9 @@
         }
     }
 
-    function _filterByAgent(agent, propName, assets, filtered) {
-        agent.all = true;
-        var agentKeys = Object.keys(agent);
+    function _filterByAgent(agentInfo, propName, assets, filtered) {
+//        agent.all = true;
+        var agentKeys = agentInfo.agentTypes;
 //        var i = agentKeys.length;
         var agentType;
 
@@ -92,6 +92,7 @@
                 while (i--) {
                     agentType = agentKeys[i];
                     if(asset.agents.indexOf(agentType.toLowerCase())>=0 || asset.agents.indexOf(agentType)>=0) {
+                        console.log("match: " + asset.name);
                         if(filtered[propName]) {
                             filtered[propName].push(asset.name);
                         } else {
@@ -103,9 +104,9 @@
         });
     }
 
-    function filter(req, defaults) {
+    function filter(agentInfo, defaults) {
 
-        var agent = ua(req.headers['user-agent']);
+//        var agent = ua(req.headers['user-agent']);
         var filtered = {};
         var defaultKeys = Object.keys(defaults);
         var i = defaultKeys.length;
@@ -121,7 +122,7 @@
                 case constants.SCRIPTS:
 //                case constants.TEMPLATE_FILES:
 //            console.log("prop: " + propName);
-                    _filterByAgent(agent, propName, propValue, filtered);
+                    _filterByAgent(agentInfo, propName, propValue, filtered);
                     break;
                 default:
                     filtered[propName] = propValue;
@@ -137,9 +138,13 @@
         var agent = ua(req.headers['user-agent']);
 
         var hash = '';
+        var agentTypes = [];
         AGENT_TYPES.forEach(function(type) {
+//            console.log(type);
             var newVal ='0';
             if(agent[type]) {
+//                console.log("is: " + type);
+                agentTypes.push(type);
                 newVal = '1';
             }
 
@@ -148,19 +153,23 @@
 
 //        console.log(hash);
 
-        return hash;
+        return {
+            hash: hash,
+            agentTypes: agentTypes
+        };
     }
 
     function getModule(req, module, namespace) {
 
-        var userAgentHash = _getUserAgentHash(req);
+        var agentInfo = _getUserAgentHash(req);
+        var userAgentHash = agentInfo.hash;
         if(namespace) {
             if(cache[namespace] && cache[namespace][userAgentHash]) {
                 return cache[namespace][userAgentHash].module;
             } else if (!module) {
                 return undefined;
             } else {
-                var mod = filter(req, module);
+                var mod = filter(agentInfo, module);
                 cache[namespace] = {};
                 cache[namespace][userAgentHash] = {module: mod};
                 return mod;
@@ -169,7 +178,7 @@
             if(cache[userAgentHash]) {
                 return cache[userAgentHash].module;
             } else {
-                var mod = filter(req, module);
+                var mod = filter(agentInfo, module);
                 cache[userAgentHash] = {module: mod};
                 return mod;
             }
@@ -178,7 +187,8 @@
     }
 
     function setModule(req, module) {
-        var userAgentHash = _getUserAgentHash(req);
+        var agentInfo = _getUserAgentHash(req);
+        var userAgentHash = agentInfo.hash;
         if(cache[userAgentHash]) {
             cache[userAgentHash].module = module;
         } else {
