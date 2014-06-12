@@ -42,9 +42,6 @@
 
             } else {
 
-//        console.log("masterAssetData[propName]:" + masterAssetData[propName]);
-//        console.log('***' + propName);
-
                 if (typeof newAssetDataValue === 'object') {
 
                     var newAssetDataValueKeys = Object.keys(newAssetDataValue);
@@ -56,14 +53,12 @@
                         var newAssetDataObjectValue = newAssetDataValue[prop];
 
                         if (Array.isArray(newAssetDataObjectValue)) {
-//              console.log('this is an array');
                             if (masterAssetData[propName] && masterAssetData[propName][prop]) {
                                 masterAssetData[propName][prop] = masterAssetData[propName][prop].concat(newAssetDataObjectValue);
                             } else {
                                 masterAssetData[propName][prop] = newAssetDataObjectValue;
                             }
                         } else {
-//              console.log('just an object');
                             masterAssetData[propName][prop] = newAssetDataObjectValue;
                         }
                     }
@@ -75,14 +70,12 @@
     }
 
     function _filterByAgent(agentInfo, propName, assets, filtered) {
-//        agent.all = true;
         var agentKeys = agentInfo.agentTypes;
-//        var i = agentKeys.length;
         var agentType;
 
-        assets.forEach(function(asset) {
+        assets.forEach(function (asset) {
             if (typeof asset === 'string') {
-                if(filtered[propName]) {
+                if (filtered[propName]) {
                     filtered[propName].push(asset);
                 } else {
                     filtered[propName] = [asset];
@@ -91,9 +84,8 @@
                 var i = agentKeys.length;
                 while (i--) {
                     agentType = agentKeys[i];
-                    if(asset.agents.indexOf(agentType.toLowerCase())>=0 || asset.agents.indexOf(agentType)>=0) {
-                        console.log("match: " + asset.name);
-                        if(filtered[propName]) {
+                    if (asset.agents.indexOf(agentType.toLowerCase()) >= 0 || asset.agents.indexOf(agentType) >= 0) {
+                        if (filtered[propName]) {
                             filtered[propName].push(asset.name);
                         } else {
                             filtered[propName] = [asset];
@@ -105,8 +97,6 @@
     }
 
     function filter(agentInfo, defaults) {
-
-//        var agent = ua(req.headers['user-agent']);
         var filtered = {};
         var defaultKeys = Object.keys(defaults);
         var i = defaultKeys.length;
@@ -120,8 +110,6 @@
                 case constants.TRAILING_SCRIPTS:
                 case constants.STYLESHEETS:
                 case constants.SCRIPTS:
-//                case constants.TEMPLATE_FILES:
-//            console.log("prop: " + propName);
                     _filterByAgent(agentInfo, propName, propValue, filtered);
                     break;
                 default:
@@ -136,22 +124,18 @@
 
     function _getUserAgentHash(req) {
         var agent = ua(req.headers['user-agent']);
-
         var hash = '';
         var agentTypes = [];
-        AGENT_TYPES.forEach(function(type) {
-//            console.log(type);
-            var newVal ='0';
-            if(agent[type]) {
-//                console.log("is: " + type);
+
+        AGENT_TYPES.forEach(function (type) {
+            var newVal = '0';
+            if (agent[type]) {
                 agentTypes.push(type);
                 newVal = '1';
             }
 
             hash = hash + newVal;
         });
-
-//        console.log(hash);
 
         return {
             hash: hash,
@@ -163,8 +147,8 @@
 
         var agentInfo = _getUserAgentHash(req);
         var userAgentHash = agentInfo.hash;
-        if(namespace) {
-            if(cache[namespace] && cache[namespace][userAgentHash]) {
+        if (namespace) {
+            if (cache[namespace] && cache[namespace][userAgentHash]) {
                 return cache[namespace][userAgentHash].module;
             } else if (!module) {
                 return undefined;
@@ -175,7 +159,7 @@
                 return mod;
             }
         } else {
-            if(cache[userAgentHash]) {
+            if (cache[userAgentHash]) {
                 return cache[userAgentHash].module;
             } else {
                 var mod = filter(agentInfo, module);
@@ -189,7 +173,7 @@
     function setModule(req, module) {
         var agentInfo = _getUserAgentHash(req);
         var userAgentHash = agentInfo.hash;
-        if(cache[userAgentHash]) {
+        if (cache[userAgentHash]) {
             cache[userAgentHash].module = module;
         } else {
             cache[userAgentHash] = {module: module};
@@ -206,8 +190,6 @@
         if (cached) {
             return cb(undefined, cached);
         }
-
-        debug("reading", file);
 
         fs.readFile(file, "utf-8", function (err, content) {
             if (err) {
@@ -258,7 +240,6 @@
             file;
 
         function loadHtmlFiles(cb) {
-            console.log('******** file: ' + file);
             var pos = idx++;
             async.each(htmlFiles, function (file, callback) {
                 load(cache, file, function (err, content) {
@@ -274,7 +255,6 @@
 
         function loadTemplateFiles(cb) {
             async.each(templateFiles, function (file, callback) {
-                console.log('$$ file: ' + file);
                 var name = path.basename(file, '.html');
 
                 load(cache, file, function (err, content) {
@@ -291,7 +271,7 @@
             }, cb);
         }
 
-        if(!mod.compileSite) {
+        if (!mod.compileSite) {
             async.parallel([
                 loadHtmlFiles,
                 loadTemplateFiles
