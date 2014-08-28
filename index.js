@@ -2,26 +2,41 @@
 (function (module) {
     "use strict";
 
-    var ua = require('mobile-agent');
-    var constants = {
-        TRAILING_SCRIPTS: 'trailingScripts',
-        STYLESHEETS: 'stylesheets',
-        SCRIPTS: 'scripts',
-        TEMPLATE_FILES: 'templateFiles'
-    };
-    var AGENT_TYPES = ['Android', 'Browser', 'iOS', 'iPad', 'iPhone', 'Mac', 'Mobile', 'webOS', 'Windows'];
-    var cache = {
-        templates: {},
-        files: {}
-    };
-
-    var HTTP_NOT_FOUND = 404,
+    var ua = require('mobile-agent'),
+        constants = {
+            TRAILING_SCRIPTS: 'trailingScripts',
+            STYLESHEETS: 'stylesheets',
+            SCRIPTS: 'scripts',
+            TEMPLATE_FILES: 'templateFiles'
+        },
+        AGENT_TYPES = ['Android', 'Browser', 'iOS', 'iPad', 'iPhone', 'Mac', 'Mobile', 'webOS', 'Windows'],
+        cache = {
+            templates: {},
+            files: {}
+        },
+        HTTP_NOT_FOUND = 404,
         path = require("path"),
         hbars = require("handlebars"),
         util = require("./lib/util"),
         locate = util.locate,
         fs = require("fs"),
         async = require('async');
+
+    function locateSync(dirs, file, idx) {
+        var i = idx || 0;
+
+        if (i >= dirs.length) {
+            throw new Error("file " + file + " not found in " + dirs);
+        }
+
+        var qfile = path.join(dirs[i], file);
+
+        if (fs.existsSync(qfile)) {
+            return qfile;
+        } else {
+            return locateSync(dirs, file, i + 1);
+        }
+    }
 
     function merge(masterAssetData, newAssetData) {
 
@@ -170,13 +185,26 @@
 
     }
 
-    function setModule(req, module) {
+    function setModule(req, module, namespace) {
         var agentInfo = _getUserAgentHash(req);
         var userAgentHash = agentInfo.hash;
-        if (cache[userAgentHash]) {
-            cache[userAgentHash].module = module;
+        if (namespace) {
+            if (cache[namespace] && cache[namespace][userAgentHash]) {
+                cache[namespace][userAgentHash] = module;
+            } else {
+                if(!cache[namespace]) {
+                    cache[namespace] = {};
+                    cache[namespace][userAgentHash] = module;
+                } else {
+                    cache[userAgentHash] = {module: module};
+                }
+            }
         } else {
-            cache[userAgentHash] = {module: module};
+            if (cache[userAgentHash]) {
+                cache[userAgentHash].module = module;
+            } else {
+                cache[userAgentHash] = {module: module};
+            }
         }
     }
 
@@ -212,7 +240,7 @@
         return locate(mod["public"], file, function (err, qfile) {
             if (err) {
                 if (statusCode === HTTP_NOT_FOUND) {
-                    return cb(err);
+                    return (cb)?cb(err):undefined;
                 }
 
                 return compileHtml(mod, "/404.html", cb, HTTP_NOT_FOUND, debug);
@@ -295,7 +323,8 @@
         getModule: getModule,
         setModule: setModule,
         compileSite: compileSite,
-        compileHtml: compileHtml
+        compileHtml: compileHtml,
+        locateSync: locateSync
     };
 
 })(module);
