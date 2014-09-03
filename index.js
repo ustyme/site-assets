@@ -164,21 +164,21 @@
         var userAgentHash = agentInfo.hash;
         if (namespace) {
             if (cache[namespace] && cache[namespace][userAgentHash]) {
-                return cache[namespace][userAgentHash].module;
+                return cache[namespace][userAgentHash];
             } else if (!module) {
                 return undefined;
             } else {
                 var mod = filter(agentInfo, module);
                 cache[namespace] = {};
-                cache[namespace][userAgentHash] = {module: mod};
+                cache[namespace][userAgentHash] = mod;
                 return mod;
             }
         } else {
             if (cache[userAgentHash]) {
-                return cache[userAgentHash].module;
+                return cache[userAgentHash];
             } else {
                 var mod = filter(agentInfo, module);
-                cache[userAgentHash] = {module: mod};
+                cache[userAgentHash] = mod;
                 return mod;
             }
         }
@@ -196,14 +196,14 @@
                     cache[namespace] = {};
                     cache[namespace][userAgentHash] = module;
                 } else {
-                    cache[userAgentHash] = {module: module};
+                    cache[userAgentHash] = module;
                 }
             }
         } else {
             if (cache[userAgentHash]) {
-                cache[userAgentHash].module = module;
+                cache[userAgentHash] = module;
             } else {
-                cache[userAgentHash] = {module: module};
+                cache[userAgentHash] = module;
             }
         }
     }
