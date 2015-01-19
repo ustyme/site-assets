@@ -9,7 +9,7 @@
             SCRIPTS: 'scripts',
             TEMPLATE_FILES: 'templateFiles'
         },
-        AGENT_TYPES = ['Android', 'Browser', 'iOS', 'iPad', 'iPhone', 'Mac', 'Mobile', 'webOS', 'Windows'],
+        AGENT_TYPES = ['Android', 'Browser', 'iOS', 'iPad', 'iPhone', 'Mac', 'Mobile', 'webOS', 'Windows', 'Cordova', 'CordovaDefault'],
         cache = {
             templates: {},
             files: {}
@@ -147,6 +147,9 @@
             if (agent[type]) {
                 agentTypes.push(type);
                 newVal = '1';
+            } else if (req.query['agent'] === type) {
+                agentTypes.push(req.query['agent']);
+                newVal = '1';
             }
 
             hash = hash + newVal;
@@ -158,32 +161,38 @@
         };
     }
 
-    function getModule(req, module, namespace) {
-
+    function getCachedModule(req, namespace) {
+        if(!namespace) {
+            return undefined;
+        }
+        console.log("originalUrl: " + req.originalUrl);
         var agentInfo = _getUserAgentHash(req);
         var userAgentHash = agentInfo.hash;
         if (namespace) {
-            if (cache[namespace] && cache[namespace][userAgentHash]) {
+            if (namespace && cache[namespace] && cache[namespace][userAgentHash]) {
                 return cache[namespace][userAgentHash];
-            } else if (!module) {
+            } else {
                 return undefined;
-            } else {
-                var mod = filter(agentInfo, module);
-                cache[namespace] = {};
-                cache[namespace][userAgentHash] = mod;
-                return mod;
-            }
-        } else {
-            if (cache[userAgentHash]) {
-                return cache[userAgentHash];
-            } else {
-                var mod = filter(agentInfo, module);
-                cache[userAgentHash] = mod;
-                return mod;
             }
         }
-
     }
+
+    function getModule(req, module) {
+        console.log("originalUrl: " + req.originalUrl);
+        var agentInfo = _getUserAgentHash(req);
+        var userAgentHash = agentInfo.hash;
+
+        if (cache[userAgentHash]) {
+            console.log("cached userAgentHash: " + userAgentHash);
+            return cache[userAgentHash];
+        } else {
+            var mod = filter(agentInfo, module);
+            cache[userAgentHash] = mod;
+            console.log("NOT cached userAgentHash: " + userAgentHash);
+
+            return mod;
+        }
+    } // 01110010001
 
     function setModule(req, module, namespace) {
         var agentInfo = _getUserAgentHash(req);
@@ -320,6 +329,7 @@
     module.exports = {
         merge: merge,
         filter: filter,
+        getCachedModule: getCachedModule,
         getModule: getModule,
         setModule: setModule,
         compileSite: compileSite,
