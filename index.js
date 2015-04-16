@@ -198,15 +198,11 @@
         var agentInfo = _getUserAgentHash(req);
         var userAgentHash = agentInfo.hash;
         if (namespace) {
-            if (cache[namespace] && cache[namespace][userAgentHash]) {
+            if(!cache[namespace]) {
+                cache[namespace] = {};
+            }
+            if(!cache[namespace][userAgentHash]) {
                 cache[namespace][userAgentHash] = module;
-            } else {
-                if(!cache[namespace]) {
-                    cache[namespace] = {};
-                    cache[namespace][userAgentHash] = module;
-                } else {
-                    cache[userAgentHash] = module;
-                }
             }
         } else {
             if (cache[userAgentHash]) {
