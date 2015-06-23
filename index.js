@@ -48,6 +48,8 @@
             propName = assetKeys[i];
             var newAssetDataValue = newAssetData[propName];
 
+            //console.log('propName: ', propName);
+
             if (Array.isArray(newAssetDataValue)) {
                 if (masterAssetData[propName]) {
                     masterAssetData[propName] = masterAssetData[propName].concat(newAssetDataValue);
@@ -162,6 +164,7 @@
     }
 
     function getCachedModule(req, namespace) {
+        //console.log('getCachedModule: ', namespace);
         if(!namespace) {
             return undefined;
         }
@@ -178,7 +181,8 @@
     }
 
     function getModule(req, module) {
-        console.log("originalUrl: " + req.originalUrl);
+        //console.log('getModule: ');
+        //console.log("originalUrl: " + req.originalUrl);
         var agentInfo = _getUserAgentHash(req);
         var userAgentHash = agentInfo.hash;
 
@@ -195,20 +199,23 @@
     } // 01110010001
 
     function setModule(req, module, namespace) {
+        //console.log('setModule: ', namespace);
+
         var agentInfo = _getUserAgentHash(req);
         var userAgentHash = agentInfo.hash;
+        var mod = filter(agentInfo, module);
         if (namespace) {
             if(!cache[namespace]) {
                 cache[namespace] = {};
             }
             if(!cache[namespace][userAgentHash]) {
-                cache[namespace][userAgentHash] = module;
+                cache[namespace][userAgentHash] = mod;
             }
         } else {
             if (cache[userAgentHash]) {
-                cache[userAgentHash] = module;
+                cache[userAgentHash] = mod;
             } else {
-                cache[userAgentHash] = module;
+                cache[userAgentHash] = mod;
             }
         }
     }
