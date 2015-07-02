@@ -20,7 +20,7 @@
     },
     "dependencies": {
         "mobile-agent": "0.0.8",
-        "handlebars": "2.0.0-alpha.4",
+        "handlebars": "3.0.3",
         "async": "0.2.9"
     },
     "bugs": {
