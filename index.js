@@ -9,7 +9,7 @@
             SCRIPTS: 'scripts',
             TEMPLATE_FILES: 'templateFiles'
         },
-        AGENT_TYPES = ['Android', 'Browser', 'iOS', 'iPad', 'iPhone', 'Mac', 'Mobile', 'webOS', 'Windows', 'Cordova', 'CordovaDefault'],
+        AGENT_TYPES = ['Android', 'Browser', 'iOS', 'iPad', 'iPhone', 'Mac', 'Mobile', 'webOS', 'Windows', 'Cordova', 'CordovaDefault', 'Chrome'],
         cache = {
             templates: {},
             files: {}
@@ -151,6 +151,9 @@
                 newVal = '1';
             } else if (req.query['agent'] === type) {
                 agentTypes.push(req.query['agent']);
+                newVal = '1';
+            } else if (type === 'Chrome' &&agent.Browser.name == 'chrome' ) {
+                agentTypes.push(type);
                 newVal = '1';
             }
 
